@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getStorageProvider, generateConversationTitle, createCacheKey } from '@/lib/storage';
+import { getStorageProvider, generateConversationTitle } from '@/lib/storage';
 
 // GET /api/conversations - Get all conversations for a user
 export async function GET(request: NextRequest) {
@@ -90,7 +90,7 @@ export async function PUT(request: NextRequest) {
       }
     }
     
-    const updates: any = {};
+    const updates: Record<string, unknown> = {};
     if (title) updates.title = title;
     
     await storage.updateConversation(conversationId, updates);

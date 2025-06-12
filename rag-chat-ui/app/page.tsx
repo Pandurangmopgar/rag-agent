@@ -18,7 +18,7 @@ interface MemoryEntry {
 
 export default function Home() {
   const { theme, setTheme } = useTheme();
-  const [selectedMemory, setSelectedMemory] = useState<MemoryEntry | null>(null);
+  const [, setSelectedMemory] = useState<MemoryEntry | null>(null);
   const [chatKey, setChatKey] = useState(0); // Key to force re-render of ChatBox
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [conversationChangeCounter, setConversationChangeCounter] = useState(0); // Trigger for conversation refresh
@@ -59,8 +59,8 @@ export default function Home() {
     setChatKey(prev => prev + 1);
     
     // Also clear via window method as backup
-    if ((window as any).clearChatMessages) {
-      (window as any).clearChatMessages();
+    if ((window as unknown as Record<string, unknown>).clearChatMessages) {
+      ((window as unknown as Record<string, unknown>).clearChatMessages as () => void)();
     }
   };
 
@@ -71,7 +71,7 @@ export default function Home() {
   };
 
   // Handle conversation creation from ChatBox
-  const handleCreateConversation = (conversationId: string, title: string) => {
+  const handleCreateConversation = (conversationId: string) => {
     setCurrentConversationId(conversationId);
     // Trigger conversation list refresh
     setConversationChangeCounter(prev => prev + 1);

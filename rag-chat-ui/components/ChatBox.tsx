@@ -2,13 +2,13 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Paperclip, Bot, User, Loader2, Upload, CheckCircle, AlertCircle, Image as ImageIcon, X, ArrowDown } from 'lucide-react';
+import { Send, Paperclip, Bot, User, Loader2, CheckCircle, AlertCircle, Image as ImageIcon, X, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
+
 
 
 interface Message {
@@ -100,7 +100,7 @@ export default function ChatBox({ onAddMemory, onClearChat, conversationId, onCr
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          const loadedMessages: Message[] = data.messages.map((msg: any) => ({
+          const loadedMessages: Message[] = data.messages.map((msg: { id: string; content: string; role: string; timestamp: string; sources?: string[]; image?: string; imageType?: string }) => ({
             id: msg.id,
             content: msg.content,
             role: msg.role,
@@ -334,9 +334,9 @@ export default function ChatBox({ onAddMemory, onClearChat, conversationId, onCr
 
   // Expose clearMessages function to parent
   useEffect(() => {
-    (window as any).clearChatMessages = clearMessages;
+    (window as unknown as Record<string, unknown>).clearChatMessages = clearMessages;
     return () => {
-      delete (window as any).clearChatMessages;
+      delete (window as unknown as Record<string, unknown>).clearChatMessages;
     };
   }, []);
 

@@ -34,7 +34,7 @@ function splitTextIntoChunks(text: string, maxChars: number = 1500, overlap: num
   let startIndex = 0;
   
   while (startIndex < cleanedText.length) {
-    let endIndex = startIndex + maxChars;
+    const endIndex = startIndex + maxChars;
     
     // If this would be the last chunk, take everything remaining
     if (endIndex >= cleanedText.length) {
@@ -121,9 +121,10 @@ async function generateEmbeddingWithRetry(
     
     const embedding = result.embeddings?.[0]?.values;
     return embedding && embedding.length > 0 ? embedding : null;
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
     // Check if it's a rate limit error
-    if (error.message?.includes('429') || error.message?.includes('Too Many Requests')) {
+    if (errorMessage?.includes('429') || errorMessage?.includes('Too Many Requests')) {
       if (retryCount < MAX_RETRIES) {
         // Exponential backoff: 1s, 2s, 4s
         const retryDelay = BASE_RETRY_DELAY * Math.pow(2, retryCount);
@@ -131,11 +132,11 @@ async function generateEmbeddingWithRetry(
         await delay(retryDelay);
         return generateEmbeddingWithRetry(chunk, retryCount + 1);
       } else {
-        console.error(`Max retries exceeded for embedding generation. Rate limit error: ${error.message}`);
+        console.error(`Max retries exceeded for embedding generation. Rate limit error: ${errorMessage}`);
         return null;
       }
     } else {
-      console.error('Embedding generation error:', error.message);
+      console.error('Embedding generation error:', errorMessage);
       return null;
     }
   }
@@ -146,7 +147,7 @@ async function processChunksInBatches(
   chunks: string[], 
   fileName: string,
   onProgress?: (processed: number, total: number) => void
-): Promise<any[]> {
+): Promise<Array<{ id: string; values: number[]; metadata: { text: string; source: string; chunk_index: number; total_chunks: number; timestamp: string; batch_number: number } }>> {
   const vectors = [];
   const totalChunks = chunks.length;
   
