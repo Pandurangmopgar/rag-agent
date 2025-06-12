@@ -2,12 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FolderOpen, FolderClosed, Clock, MessageSquare, X, ChevronLeft, ChevronRight, Trash2, Edit2, ImageIcon, Zap, Check } from 'lucide-react';
+import { FolderOpen, FolderClosed, Clock, MessageSquare, X, ChevronRight, Trash2, Edit2, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Input } from '@/components/ui/input';
+
 import { cn } from '@/lib/utils';
 import { Conversation } from '@/lib/storage';
 
@@ -35,7 +35,7 @@ export default function MemoryPanel({ onSelectMemory, onNewChat, onAddMemory, on
   const [selectedMemory, setSelectedMemory] = useState<string | null>(null);
   const [editingConversation, setEditingConversation] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [, setIsLoading] = useState(false);
   const [view, setView] = useState<'conversations' | 'memories'>('conversations');
 
   // Load conversations from persistent storage
@@ -46,7 +46,7 @@ export default function MemoryPanel({ onSelectMemory, onNewChat, onAddMemory, on
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          setConversations(data.conversations.map((conv: any) => ({
+          setConversations(data.conversations.map((conv: { id: string; title: string; sessionId: string; userId?: string; createdAt: string; updatedAt: string }) => ({
             ...conv,
             createdAt: new Date(conv.createdAt),
             updatedAt: new Date(conv.updatedAt)
@@ -92,7 +92,7 @@ export default function MemoryPanel({ onSelectMemory, onNewChat, onAddMemory, on
       if (savedMemories) {
         try {
           const parsed = JSON.parse(savedMemories);
-          setMemories(parsed.map((m: any) => ({
+          setMemories(parsed.map((m: { id: string; question: string; answer: string; timestamp: string; sources?: string[] }) => ({
             ...m,
             timestamp: new Date(m.timestamp)
           })));
@@ -190,7 +190,7 @@ export default function MemoryPanel({ onSelectMemory, onNewChat, onAddMemory, on
   // Expose addMemory function to parent component
   useEffect(() => {
     onAddMemory?.(addMemory);
-  }, [onAddMemory]);
+  }, [onAddMemory, addMemory]);
 
   // Handle memory selection
   const handleSelectMemory = (memory: MemoryEntry) => {

@@ -302,7 +302,7 @@ export default function ChatBox({ onAddMemory, onClearChat, conversationId, onCr
       } else {
         throw new Error(data.error || 'Failed to get response');
       }
-    } catch (error) {
+    } catch {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         content: 'I apologize, but I encountered an error while processing your request. Please try again.',
