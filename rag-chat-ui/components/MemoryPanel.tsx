@@ -20,7 +20,6 @@ interface Conversation {
 }
 
 interface MemoryPanelProps {
-  onSelectMemory?: (entry: any) => void;
   onNewChat?: () => void;
   onAddMemory?: (addMemoryFn: (question: string, answer: string, sources?: string[]) => void) => void;
   onSelectConversation?: (conversationId: string) => void;

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Paperclip, Bot, User, Loader2, CheckCircle, AlertCircle, Image as ImageIcon, X, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,8 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
-
-
+import Image from 'next/image';
 
 interface Message {
   id: string;
@@ -150,8 +149,6 @@ export default function ChatBox({ onAddMemory, onClearChat, conversationId, onCr
       // by remounting the component or through other means
     }
   }, [onClearChat]);
-
-
 
   const scrollToBottom = () => {
     const chatContainer = document.querySelector('.chat-messages-container');
@@ -548,11 +545,13 @@ export default function ChatBox({ onAddMemory, onClearChat, conversationId, onCr
                   )}>
                     {/* Image Display */}
                     {message.image && (
-                      <div className="mb-3">
-                        <img
+                      <div className="mb-3 relative w-full max-w-full h-64">
+                        <Image
                           src={`data:${message.imageType};base64,${message.image}`}
                           alt="Uploaded image"
-                          className="max-w-full max-h-64 rounded-lg object-contain"
+                          fill
+                          className="rounded-lg object-contain"
+                          unoptimized // Required for data URLs
                         />
                       </div>
                     )}
@@ -668,11 +667,13 @@ export default function ChatBox({ onAddMemory, onClearChat, conversationId, onCr
                   </Button>
                 )}
               </div>
-              <div className="mt-2">
-                <img
+              <div className="mt-2 relative w-full max-h-32">
+                <Image
                   src={`data:${selectedImageType};base64,${selectedImage}`}
                   alt="Selected image"
-                  className="max-h-32 rounded-lg object-contain border border-slate-200 dark:border-slate-600"
+                  fill
+                  className="rounded-lg object-contain border border-slate-200 dark:border-slate-600"
+                  unoptimized // Required for data URLs
                 />
               </div>
             </div>
