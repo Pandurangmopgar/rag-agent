@@ -149,32 +149,19 @@ export default function Home() {
                 </div>
               </motion.div>
 
-              {/* Actions */}
-              <div className="flex items-center gap-3">
-                {/* Stats */}
-                <div className="hidden md:flex items-center gap-6 text-sm text-slate-600 dark:text-slate-400">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                    <span>Online</span>
-                  </div>
-                  <div className="text-slate-400 dark:text-slate-500">|</div>
-                  <div>v2.0.0</div>
-                </div>
-
-                {/* Theme Toggle */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                  className="w-9 h-9 p-0 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
-                >
-                  {theme === 'dark' ? (
-                    <Sun className="w-4 h-4 text-yellow-500" />
-                  ) : (
-                    <Moon className="w-4 h-4 text-slate-700" />
-                  )}
-                </Button>
-              </div>
+              {/* Theme Toggle */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="w-9 h-9 p-0 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
+              >
+                {theme === 'dark' ? (
+                  <Sun className="w-4 h-4 text-yellow-500" />
+                ) : (
+                  <Moon className="w-4 h-4 text-slate-700" />
+                )}
+              </Button>
             </div>
           </div>
         </motion.header>
