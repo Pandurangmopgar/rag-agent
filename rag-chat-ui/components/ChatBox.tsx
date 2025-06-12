@@ -2,12 +2,14 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Paperclip, Bot, User, Loader2, Upload, CheckCircle, AlertCircle, Image as ImageIcon, X } from 'lucide-react';
+import { Send, Paperclip, Bot, User, Loader2, Upload, CheckCircle, AlertCircle, Image as ImageIcon, X, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+
 
 interface Message {
   id: string;
@@ -32,9 +34,10 @@ interface ChatBoxProps {
   onClearChat?: () => void;
   conversationId?: string;
   onCreateConversation?: (conversationId: string, title: string) => void;
+  onMessageSent?: () => void; // Callback when a message is sent
 }
 
-export default function ChatBox({ onAddMemory, onClearChat, conversationId, onCreateConversation }: ChatBoxProps) {
+export default function ChatBox({ onAddMemory, onClearChat, conversationId, onCreateConversation, onMessageSent }: ChatBoxProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -49,6 +52,7 @@ export default function ChatBox({ onAddMemory, onClearChat, conversationId, onCr
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
   
   // Generate a unique session ID for this chat session
   const [sessionId] = useState(() => {
@@ -70,16 +74,22 @@ export default function ChatBox({ onAddMemory, onClearChat, conversationId, onCr
     return newSessionId;
   });
 
+  // Track when we're loading from props vs creating new conversation
+  const [isLoadingFromProps, setIsLoadingFromProps] = useState(false);
+
   // Load messages from persistent storage when conversation changes
   useEffect(() => {
-    if (currentConversationId) {
+    if (currentConversationId && isLoadingFromProps) {
       loadConversationMessages(currentConversationId);
+      setIsLoadingFromProps(false);
     }
-  }, [currentConversationId]);
+  }, [currentConversationId, isLoadingFromProps]);
 
   // Update conversation ID when prop changes
   useEffect(() => {
     if (conversationId !== currentConversationId) {
+      setIsLoadingFromProps(true); // Flag that we're loading from props
+      setMessages([]); // Clear current messages when switching conversations
       setCurrentConversationId(conversationId || null);
     }
   }, [conversationId, currentConversationId]);
@@ -141,35 +151,90 @@ export default function ChatBox({ onAddMemory, onClearChat, conversationId, onCr
     }
   }, [onClearChat]);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const chatContainer = document.querySelector('.chat-messages-container');
+    if (chatContainer) {
+      chatContainer.scrollTo({
+        top: chatContainer.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
   };
+
+  // Scroll to bottom when messages change, but only if user was near bottom
+  const [isNearBottom, setIsNearBottom] = useState(true);
+  
+  // Check if user is near bottom of chat
+  const checkIfNearBottom = () => {
+    const chatContainer = document.querySelector('.chat-messages-container');
+    if (chatContainer) {
+      const { scrollTop, scrollHeight, clientHeight } = chatContainer;
+      const isNear = scrollHeight - scrollTop - clientHeight < 100; // Within 100px of bottom
+      setIsNearBottom(isNear);
+    }
+  };
+
+  // Simple scroll effect - only auto-scroll to bottom if user is near bottom
+  useEffect(() => {
+    if (isNearBottom && messages.length > 0) {
+      // Simple delay to ensure DOM is updated, then scroll to bottom naturally
+      const timeoutId = setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [messages, isNearBottom]);
+
+  // Add scroll event listener with throttling for better performance
+  useEffect(() => {
+    const chatContainer = document.querySelector('.chat-messages-container');
+    if (chatContainer) {
+      let timeoutId: NodeJS.Timeout;
+      
+      const throttledCheckIfNearBottom = () => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(checkIfNearBottom, 100);
+      };
+      
+      chatContainer.addEventListener('scroll', throttledCheckIfNearBottom);
+      
+      // Initial check
+      checkIfNearBottom();
+      
+      return () => {
+        chatContainer.removeEventListener('scroll', throttledCheckIfNearBottom);
+        clearTimeout(timeoutId);
+      };
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if ((!input.trim() && !selectedImage) || isLoading) return;
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      content: input.trim() || (selectedImage ? "I've uploaded an image. Can you analyze it?" : ""),
-      role: 'user',
-      timestamp: new Date(),
-      image: selectedImage || undefined,
-      imageType: selectedImageType || undefined
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    setInput('');
+    // Store input and image data before clearing
     const currentInput = input.trim() || (selectedImage ? "I've uploaded an image. Can you analyze it?" : "");
-    
-    // Store image data before clearing (for API call)
     const imageData = selectedImage;
     const imageType = selectedImageType;
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      content: currentInput,
+      role: 'user',
+      timestamp: new Date(),
+      image: imageData || undefined,
+      imageType: imageType || undefined
+    };
+
+    // Add user message to chat immediately
+    setMessages(prev => [...prev, userMessage]);
     
+    // Clear input field immediately so user can type next message
+    setInput('');
+    
+    // Start loading state
     setIsLoading(true);
     
     // Clear image state for UI with a small delay for better UX
@@ -231,6 +296,9 @@ export default function ChatBox({ onAddMemory, onClearChat, conversationId, onCr
         
         // Add to memory panel (legacy support)
         onAddMemory?.(userMessage.content, assistantMessage.content, assistantMessage.sources);
+        
+        // Notify parent that a message exchange is complete
+        onMessageSent?.();
       } else {
         throw new Error(data.error || 'Failed to get response');
       }
@@ -416,11 +484,24 @@ export default function ChatBox({ onAddMemory, onClearChat, conversationId, onCr
     }
   };
 
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const chatContainer = e.currentTarget;
+    const { scrollTop, scrollHeight, clientHeight } = chatContainer;
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+    setIsNearBottom(isNearBottom);
+  };
+
   return (
-    <div className="flex flex-col h-full bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+    <div className="relative flex flex-col h-full bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       {/* Chat Messages Area */}
-      <div className="flex-1 overflow-hidden">
-        <div className="h-full overflow-y-auto px-4 py-6 space-y-6">
+      <div 
+        ref={chatContainerRef}
+        className="flex-1 overflow-hidden"
+      >
+        <div 
+          className="chat-messages-container h-full overflow-y-auto px-4 py-6 space-y-6"
+          onScroll={handleScroll}
+        >
           <AnimatePresence>
             {messages.map((message) => (
               <motion.div
@@ -430,7 +511,7 @@ export default function ChatBox({ onAddMemory, onClearChat, conversationId, onCr
                 animate="visible"
                 exit="hidden"
                 className={cn(
-                  "flex gap-3 max-w-4xl",
+                  "message-container flex gap-3 max-w-4xl",
                   message.role === 'user' ? "ml-auto flex-row-reverse" : "mr-auto"
                 )}
               >
@@ -535,6 +616,29 @@ export default function ChatBox({ onAddMemory, onClearChat, conversationId, onCr
         </div>
       </div>
 
+      {/* Scroll to Bottom Button */}
+      <AnimatePresence>
+        {!isNearBottom && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="absolute bottom-20 right-6 z-10"
+          >
+            <Button
+              onClick={() => {
+                setIsNearBottom(true);
+                scrollToBottom();
+              }}
+              className="rounded-full w-12 h-12 p-0 bg-blue-500 hover:bg-blue-600 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+              title="Scroll to bottom"
+            >
+              <ArrowDown className="w-5 h-5" />
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Selected Image Preview */}
       <AnimatePresence>
         {selectedImage && (
@@ -631,7 +735,7 @@ export default function ChatBox({ onAddMemory, onClearChat, conversationId, onCr
                     selectedImage ? "Ask a question about the image..." : 
                     "Ask a question..."
                   }
-                  className="pr-20 min-h-[44px] resize-none border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500/20"
+                  className="pr-20 h-[44px] resize-none border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200"
                   disabled={isLoading}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {

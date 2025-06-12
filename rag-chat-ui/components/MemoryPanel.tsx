@@ -25,9 +25,10 @@ interface MemoryPanelProps {
   onAddMemory?: (addMemoryFn: (question: string, answer: string, sources?: string[]) => void) => void;
   onSelectConversation?: (conversationId: string) => void;
   currentConversationId?: string;
+  conversationChangeCounter?: number; // Counter to trigger refresh
 }
 
-export default function MemoryPanel({ onSelectMemory, onNewChat, onAddMemory, onSelectConversation, currentConversationId }: MemoryPanelProps) {
+export default function MemoryPanel({ onSelectMemory, onNewChat, onAddMemory, onSelectConversation, currentConversationId, conversationChangeCounter }: MemoryPanelProps) {
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [memories, setMemories] = useState<MemoryEntry[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -65,6 +66,24 @@ export default function MemoryPanel({ onSelectMemory, onNewChat, onAddMemory, on
       loadConversations();
     }
   }, [view]);
+
+  // Refresh conversations when conversation changes (from parent)
+  useEffect(() => {
+    if (conversationChangeCounter !== undefined && view === 'conversations') {
+      loadConversations();
+    }
+  }, [conversationChangeCounter, view]);
+
+  // Auto-refresh conversations every 30 seconds when panel is open
+  useEffect(() => {
+    if (view === 'conversations' && !isCollapsed) {
+      const interval = setInterval(() => {
+        loadConversations();
+      }, 30000); // Refresh every 30 seconds
+
+      return () => clearInterval(interval);
+    }
+  }, [view, isCollapsed]);
 
   // Load memories from localStorage on mount (fallback for legacy support)
   useEffect(() => {

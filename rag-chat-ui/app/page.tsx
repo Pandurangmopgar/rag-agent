@@ -21,6 +21,7 @@ export default function Home() {
   const [selectedMemory, setSelectedMemory] = useState<MemoryEntry | null>(null);
   const [chatKey, setChatKey] = useState(0); // Key to force re-render of ChatBox
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+  const [conversationChangeCounter, setConversationChangeCounter] = useState(0); // Trigger for conversation refresh
   const addMemoryRef = useRef<((question: string, answer: string, sources?: string[]) => void) | null>(null);
 
   const headerVariants = {
@@ -72,6 +73,8 @@ export default function Home() {
   // Handle conversation creation from ChatBox
   const handleCreateConversation = (conversationId: string, title: string) => {
     setCurrentConversationId(conversationId);
+    // Trigger conversation list refresh
+    setConversationChangeCounter(prev => prev + 1);
   };
 
   // Handle memory addition from ChatBox
@@ -95,6 +98,7 @@ export default function Home() {
         onAddMemory={handleAddMemory}
         onSelectConversation={handleSelectConversation}
         currentConversationId={currentConversationId || undefined}
+        conversationChangeCounter={conversationChangeCounter}
       />
       
       {/* Main Content */}
@@ -182,6 +186,7 @@ export default function Home() {
             onAddMemory={addMemoryRef.current || undefined}
             conversationId={currentConversationId || undefined}
             onCreateConversation={handleCreateConversation}
+            onMessageSent={() => setConversationChangeCounter(prev => prev + 1)}
           />
         </main>
       </div>
