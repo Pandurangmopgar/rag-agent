@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Bot, Moon, Sun, Zap, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,21 +8,11 @@ import { useTheme } from 'next-themes';
 import ChatBox from '@/components/ChatBox';
 import MemoryPanel from '@/components/MemoryPanel';
 
-interface MemoryEntry {
-  id: string;
-  question: string;
-  answer: string;
-  timestamp: Date;
-  sources?: string[];
-}
-
 export default function Home() {
   const { theme, setTheme } = useTheme();
-  const [, setSelectedMemory] = useState<MemoryEntry | null>(null);
   const [chatKey, setChatKey] = useState(0); // Key to force re-render of ChatBox
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [conversationChangeCounter, setConversationChangeCounter] = useState(0); // Trigger for conversation refresh
-  const addMemoryRef = useRef<((question: string, answer: string, sources?: string[]) => void) | null>(null);
 
   const headerVariants = {
     hidden: { opacity: 0, y: -20 },
@@ -49,9 +39,6 @@ export default function Home() {
 
   // Handle new chat - this will clear the chat and reset state
   const handleNewChat = () => {
-    // Clear selected memory
-    setSelectedMemory(null);
-    
     // Clear current conversation
     setCurrentConversationId(null);
     
@@ -67,7 +54,6 @@ export default function Home() {
   // Handle conversation selection from MemoryPanel
   const handleSelectConversation = (conversationId: string) => {
     setCurrentConversationId(conversationId);
-    setSelectedMemory(null); // Clear any selected legacy memory
   };
 
   // Handle conversation creation from ChatBox
@@ -77,25 +63,11 @@ export default function Home() {
     setConversationChangeCounter(prev => prev + 1);
   };
 
-  // Handle memory addition from ChatBox
-  const handleAddMemory = (addMemoryFn: (question: string, answer: string, sources?: string[]) => void) => {
-    addMemoryRef.current = addMemoryFn;
-  };
-
-  // Handle memory selection
-  const handleSelectMemory = (memory: MemoryEntry) => {
-    setSelectedMemory(memory);
-    // You could potentially pre-fill the chat input with the selected question
-    // or display the conversation in some way
-  };
-
   return (
     <div className="h-screen flex bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 transition-colors duration-300">
       {/* Memory Panel */}
       <MemoryPanel 
-        onSelectMemory={handleSelectMemory}
         onNewChat={handleNewChat}
-        onAddMemory={handleAddMemory}
         onSelectConversation={handleSelectConversation}
         currentConversationId={currentConversationId || undefined}
         conversationChangeCounter={conversationChangeCounter}
@@ -170,7 +142,6 @@ export default function Home() {
         <main className="flex-1 overflow-hidden">
           <ChatBox 
             key={chatKey}
-            onAddMemory={addMemoryRef.current || undefined}
             conversationId={currentConversationId || undefined}
             onCreateConversation={handleCreateConversation}
             onMessageSent={() => setConversationChangeCounter(prev => prev + 1)}

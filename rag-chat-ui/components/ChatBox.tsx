@@ -29,14 +29,13 @@ interface UploadStatus {
 }
 
 interface ChatBoxProps {
-  onAddMemory?: (question: string, answer: string, sources?: string[]) => void;
   onClearChat?: () => void;
   conversationId?: string;
   onCreateConversation?: (conversationId: string, title: string) => void;
   onMessageSent?: () => void; // Callback when a message is sent
 }
 
-export default function ChatBox({ onAddMemory, onClearChat, conversationId, onCreateConversation, onMessageSent }: ChatBoxProps) {
+export default function ChatBox({ onClearChat, conversationId, onCreateConversation, onMessageSent }: ChatBoxProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -290,9 +289,6 @@ export default function ChatBox({ onAddMemory, onClearChat, conversationId, onCr
           sources: data.sources
         };
         setMessages(prev => [...prev, assistantMessage]);
-        
-        // Add to memory panel (legacy support)
-        onAddMemory?.(userMessage.content, assistantMessage.content, assistantMessage.sources);
         
         // Notify parent that a message exchange is complete
         onMessageSent?.();
