@@ -2,6 +2,35 @@
 
 A state-of-the-art Retrieval-Augmented Generation (RAG) chatbot built with Next.js 15, TypeScript, Tailwind CSS, and powered by modern AI technologies. This application combines the power of vector databases, AI embeddings, and conversational AI to create an intelligent assistant that can understand and respond to questions about your documents.
 
+## 🌐 Live Demo
+
+**Try the live application:** [https://rag-agent-eosin.vercel.app/](https://rag-agent-eosin.vercel.app/)
+
+## 📁 Project Resources & Testing
+
+### 🧪 Testing & Workflows
+This project includes comprehensive testing resources and automated workflows:
+
+- **`/tests/`** - Complete test suite covering all application features:
+  - API endpoint testing
+  - Document upload functionality
+  - Chat functionality validation
+  - Error handling scenarios
+  - Performance benchmarks
+
+- **`/Workflow/`** - Pre-configured N8N workflow files (`.json` format):
+  - `rag-agent.json` - Main RAG chatbot workflow
+  - `slack-bot-workflow.json` - Slack integration setup
+  - `discordbot.json` - Discord bot configuration
+  - Ready-to-import automation workflows for various platforms
+
+- **`/test-image/`** - Sample test images for multimodal AI testing:
+  - Various document formats (PDF screenshots, charts, diagrams)
+  - Test cases for image analysis features
+  - Sample images to validate vision capabilities
+
+These resources are essential for understanding the full capabilities of the system and are particularly useful for evaluation and demonstration purposes.
+
 ## ✨ Features
 
 - 🧠 **Advanced RAG Pipeline**: Sophisticated retrieval-augmented generation with semantic search
@@ -142,23 +171,39 @@ Documents are automatically:
 ## 🏗️ Project Structure
 
 ```
-rag-chat-ui/
-├── app/                          # Next.js App Router
-│   ├── api/                      # API routes
-│   │   ├── ask/route.ts         # Chat endpoint
-│   │   └── upload/route.ts      # Document upload
-│   ├── globals.css              # Global styles
-│   ├── layout.tsx              # Root layout
-│   └── page.tsx                # Main page
-├── components/                   # React components
-│   ├── ui/                      # shadcn/ui components
-│   ├── ChatBox.tsx             # Main chat interface
-│   ├── MemoryPanel.tsx         # Conversation history
-│   └── theme-provider.tsx      # Theme management
-├── lib/                         # Utilities
-│   ├── pinecone.ts             # Vector database client
-│   └── utils.ts                # Helper functions
-└── public/                      # Static assets
+rag-chat-assistant/
+├── rag-chat-ui/                  # Main application
+│   ├── app/                      # Next.js App Router
+│   │   ├── api/                  # API routes
+│   │   │   ├── ask/route.ts     # Chat endpoint
+│   │   │   ├── upload/route.ts  # Document upload
+│   │   │   └── image-analysis/  # Image analysis endpoint
+│   │   ├── globals.css          # Global styles
+│   │   ├── layout.tsx          # Root layout
+│   │   └── page.tsx            # Main page
+│   ├── components/              # React components
+│   │   ├── ui/                  # shadcn/ui components
+│   │   ├── ChatBox.tsx         # Main chat interface
+│   │   ├── MemoryPanel.tsx     # Conversation history
+│   │   ├── MarkdownRenderer.tsx # Markdown formatting
+│   │   └── theme-provider.tsx  # Theme management
+│   ├── lib/                     # Utilities
+│   │   ├── pinecone.ts         # Vector database client
+│   │   ├── storage.ts          # Storage management
+│   │   └── utils.ts            # Helper functions
+│   └── public/                  # Static assets
+├── Workflow/                     # N8N automation workflows
+│   ├── rag-agent.json          # Main RAG workflow
+│   ├── slack-bot-workflow.json # Slack integration
+│   └── discordbot.json         # Discord bot setup
+├── tests/                       # Comprehensive test suite
+│   ├── rag-chat-test.js        # Full feature testing
+│   └── api-tests/              # API endpoint tests
+├── test-image/                  # Sample test images
+│   ├── charts/                 # Chart and diagram samples
+│   ├── documents/              # Document screenshots
+│   └── mixed/                  # Various test cases
+└── README.md                    # Project documentation
 ```
 
 ## 🎨 UI Features
@@ -300,4 +345,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-Built with ❤️ by the RAG Chat Team
+This project demonstrates advanced RAG implementation with modern web technologies and comprehensive testing suite.

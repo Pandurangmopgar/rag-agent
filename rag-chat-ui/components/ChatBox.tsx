@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import { MarkdownRenderer } from '@/components/MarkdownRenderer';
 
 interface Message {
   id: string;
@@ -554,9 +555,12 @@ export default function ChatBox({ onClearChat, conversationId, onCreateConversat
                     
                     {/* Text Content */}
                     {message.content && (
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                        {message.content}
-                      </p>
+                      <div className="text-sm leading-relaxed">
+                        <MarkdownRenderer 
+                          content={message.content} 
+                          isUser={message.role === 'user'}
+                        />
+                      </div>
                     )}
                   </Card>
                   

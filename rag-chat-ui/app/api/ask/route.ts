@@ -95,8 +95,68 @@ export async function POST(request: NextRequest) {
     let formattedResponse;
     
     if (response.data) {
+      // If response.data has an 'output' field (common N8N format)
+      if (response.data.output) {
+        try {
+          let cleanOutput = response.data.output;
+          
+                     // Handle string outputs
+           if (typeof cleanOutput === 'string') {
+             // Remove escape characters and clean up the string
+             cleanOutput = cleanOutput.replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+             
+             // Try to extract JSON from the string
+             const jsonMatch = cleanOutput.match(/\{[\s\S]*\}/);
+             if (jsonMatch) {
+               try {
+                 const jsonString = jsonMatch[0];
+                 const parsedJson = JSON.parse(jsonString);
+                 
+                 formattedResponse = {
+                   answer: parsedJson.answer || parsedJson.response || parsedJson.text || 'I received a response, but couldn\'t parse it.',
+                   sources: parsedJson.sources || []
+                 };
+               } catch (jsonParseError) {
+                 console.log('📝 Failed to parse extracted JSON, using cleaned string:', jsonParseError);
+                 // If JSON parsing fails, use the original cleaned string
+                 formattedResponse = {
+                   answer: cleanOutput.replace(/^"(.*)"$/, '$1').replace(/^\{.*"answer":\s*"([^"]*)".*\}$/, '$1'),
+                   sources: []
+                 };
+               }
+             } else {
+               // If no JSON found, use the cleaned string directly
+               formattedResponse = {
+                 answer: cleanOutput.replace(/^"(.*)"$/, '$1'), // Remove surrounding quotes
+                 sources: []
+               };
+             }
+          } else if (typeof cleanOutput === 'object') {
+            // Handle object outputs
+            formattedResponse = {
+              answer: cleanOutput.answer || cleanOutput.response || cleanOutput.text || 'I received a response, but couldn\'t parse it.',
+              sources: cleanOutput.sources || []
+            };
+          } else {
+            formattedResponse = {
+              answer: String(cleanOutput),
+              sources: []
+            };
+          }
+        } catch (parseError) {
+          console.log('📝 Failed to parse output, using raw string:', parseError);
+          // Clean up the raw output as much as possible
+          let rawOutput = String(response.data.output);
+          rawOutput = rawOutput.replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/^"(.*)"$/, '$1');
+          
+          formattedResponse = {
+            answer: rawOutput,
+            sources: []
+          };
+        }
+      }
       // If response.data is already in the expected format
-      if (response.data.answer) {
+      else if (response.data.answer) {
         formattedResponse = {
           answer: response.data.answer,
           sources: response.data.sources || []
