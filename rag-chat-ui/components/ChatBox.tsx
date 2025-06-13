@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Paperclip, Bot, User, Loader2, CheckCircle, AlertCircle, Image as ImageIcon, X, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
