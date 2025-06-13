@@ -1,0 +1,172 @@
+{
+  "name": "discordbot",
+  "nodes": [
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash-exp",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -120,
+        360
+      ],
+      "id": "7cb438b1-21d1-4945-a175-924c0f80328b",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "9QwjdXypexjaqnkQ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolName": "RetrieveDocs",
+        "toolDescription": "Given an embedding vector, returns up to 3 document chunks as JSON: [{id, metadata:{text}, score},…]\n",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "rag-agent-ui",
+          "mode": "list",
+          "cachedResultName": "rag-agent-ui"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.2,
+      "position": [
+        400,
+        260
+      ],
+      "id": "e8154624-5c52-4643-b002-eec0e889ff29",
+      "name": "Pinecone Vector Store",
+      "credentials": {
+        "pineconeApi": {
+          "id": "PxZWMIYtufdy9l75",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-embedding-exp-03-07"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        620,
+        440
+      ],
+      "id": "1f615af0-1600-443b-bf41-af9424e152b2",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "9QwjdXypexjaqnkQ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{$node[\"Webhook\"].json[\"body\"][\"text\"]}}\n",
+        "options": {
+          "systemMessage": "You are a Retrieval-Augmented Generation (RAG) assistant. You have three tools:\n\nTOOLS  \n1. Google Gemini Chat Model — generates the final answer given a prompt.  \ndocument chunks from Pinecone given an embedding vector; you cannot use the Google Gemini Chat Model before calling RetrieveDocs.\n\nFLOW  \n1. Receive the user’s question.  \n\n3. Embed the user’s question (handled by your framework).  \n4. **Mandatory**: Call the RetrieveDocs tool with that embedding to fetch an array of `{ id, metadata.text }` for the top 3 chunks—do not proceed to the LLM without doing this.  \n5. If no chunks are returned, immediately respond with:\n   {\n     \"answer\": \"I’m sorry, I don’t have enough information to answer that.\",\n     \"sources\": []\n   }  \n6. Otherwise, build a prompt exactly as follows:\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -20,
+        40
+      ],
+      "id": "761d5e4a-334f-4f6c-a583-3ba7e80f0111",
+      "name": "Agent"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "discord",
+        "responseMode": "lastNode",
+        "options": {
+          "allowedOrigins": "*",
+          "rawBody": false
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -540,
+        240
+      ],
+      "id": "08e0a4c2-85c1-4ba5-8932-a7b11220b2f4",
+      "name": "Webhook",
+      "webhookId": "aa66fa23-ce6b-4fc9-8243-f42295863c44"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent": {
+      "main": [
+        []
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "ccc2b200-093f-430d-b21b-052f7477ec69",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f2912eefacc559178be3766a2e478d5f5ae5178974ae3eced3f0fbcfa10f2505"
+  },
+  "id": "2ZpVWgd0i78wx0do",
+  "tags": []
+}

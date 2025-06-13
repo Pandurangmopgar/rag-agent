@@ -1,0 +1,204 @@
+{
+  "name": "My workflow 2 copy",
+  "nodes": [
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash-exp",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -120,
+        360
+      ],
+      "id": "4558600c-c815-422d-8509-91d710ab4426",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "9QwjdXypexjaqnkQ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolName": "RetrieveDocs",
+        "toolDescription": "Given an embedding vector, returns up to 3 document chunks as JSON: [{id, metadata:{text}, score},…]\n",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "rag-agent-ui",
+          "mode": "list",
+          "cachedResultName": "rag-agent-ui"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.2,
+      "position": [
+        400,
+        260
+      ],
+      "id": "9522ec8c-635a-4a93-9963-52b229c5fcc7",
+      "name": "Pinecone Vector Store",
+      "credentials": {
+        "pineconeApi": {
+          "id": "PxZWMIYtufdy9l75",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-embedding-exp-03-07"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        620,
+        440
+      ],
+      "id": "c3fadb93-93e1-4220-8084-7e0bb9b60147",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "9QwjdXypexjaqnkQ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{$node[\"Webhook\"].json[\"body\"][\"text\"]}}\n",
+        "options": {
+          "systemMessage": "You are a Retrieval-Augmented Generation (RAG) assistant. You have three tools:\n\nTOOLS  \n1. Google Gemini Chat Model — generates the final answer given a prompt.  \ndocument chunks from Pinecone given an embedding vector; you cannot use the Google Gemini Chat Model before calling RetrieveDocs.\n\nFLOW  \n1. Receive the user’s question.  \n\n3. Embed the user’s question (handled by your framework).  \n4. **Mandatory**: Call the RetrieveDocs tool with that embedding to fetch an array of `{ id, metadata.text }` for the top 3 chunks—do not proceed to the LLM without doing this.  \n5. If no chunks are returned, immediately respond with:\n   {\n     \"answer\": \"I’m sorry, I don’t have enough information to answer that.\",\n     \"sources\": []\n   }  \n6. Otherwise, build a prompt exactly as follows:\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -20,
+        40
+      ],
+      "id": "909ba47a-43c2-4197-a597-804c9c30add2",
+      "name": "Agent"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "slack-webhook",
+        "options": {
+          "allowedOrigins": "*",
+          "responseData": "🔍 Searching knowledge base..."
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -540,
+        240
+      ],
+      "id": "f54f5a93-dfc1-44d5-9244-e043d17394c6",
+      "name": "Webhook",
+      "webhookId": "1c904213-21a2-4b9d-9e6c-1d5cec57191e"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Webhook').item.json.body.response_url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n{\n\"response_type\": \"in_channel\",\n\"replace_original\": true,\n\"text\": $(\"Agent\").item.json.output\n}\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        340,
+        40
+      ],
+      "id": "caa0879b-e17d-4d3b-ba4c-8b2186d3179f",
+      "name": "HTTP Request"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d2a0a9ef-4fc2-452c-9372-d10150897937",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f2912eefacc559178be3766a2e478d5f5ae5178974ae3eced3f0fbcfa10f2505"
+  },
+  "id": "KMwbM7TKTNar4ERz",
+  "tags": []
+}

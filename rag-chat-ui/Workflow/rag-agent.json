@@ -1,0 +1,229 @@
+{
+  "name": "My workflow 2",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "rag-chat",
+        "responseMode": "lastNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -440,
+        120
+      ],
+      "id": "12fa15c0-d0cf-4dd6-b6a5-3d312c9e724a",
+      "name": "Webhook",
+      "webhookId": "178ef106-d2ba-4584-afeb-489d1e638446"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash-exp",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -120,
+        360
+      ],
+      "id": "982a4787-90c0-4085-9b74-3a189b3adf80",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "9QwjdXypexjaqnkQ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.body.sessionId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryRedisChat",
+      "typeVersion": 1.5,
+      "position": [
+        200,
+        380
+      ],
+      "id": "071afd19-bc13-432d-9b46-2f2866e6c763",
+      "name": "Redis Chat Memory",
+      "credentials": {
+        "redis": {
+          "id": "JV1OsleGIBrvJh7K",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "allowFileUploads": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -400,
+        -80
+      ],
+      "id": "260e0e58-0afc-4faf-8838-fd89b347c420",
+      "name": "When chat message received",
+      "webhookId": "affdc53c-dc03-4a05-9c13-a46e410ab7f2"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolName": "RetrieveDocs",
+        "toolDescription": "Given an embedding vector, returns up to 3 document chunks as JSON: [{id, metadata:{text}, score},…]\n",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "rag-agent-ui",
+          "mode": "list",
+          "cachedResultName": "rag-agent-ui"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.2,
+      "position": [
+        400,
+        260
+      ],
+      "id": "c0225351-a35f-47a6-a883-97bc6eb4ac9b",
+      "name": "Pinecone Vector Store",
+      "credentials": {
+        "pineconeApi": {
+          "id": "PxZWMIYtufdy9l75",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-embedding-exp-03-07"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        620,
+        440
+      ],
+      "id": "4fdef1cf-61dc-4f4f-9894-fa7c7fd2f34e",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "9QwjdXypexjaqnkQ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{$node[\"Webhook\"].json[\"body\"][\"question\"]}}\n",
+        "options": {
+          "systemMessage": "You are a Retrieval-Augmented Generation (RAG) assistant. You have three tools:\n\nTOOLS  \n1. Google Gemini Chat Model — generates the final answer given a prompt.  \n2. Redis Chat Memory — stores and retrieves the last 5 user-bot exchanges for conversational context.  \n3. RetrieveDocs — MUST be called first to retrieve the top 3 most relevant document chunks from Pinecone given an embedding vector; you cannot use the Google Gemini Chat Model before calling RetrieveDocs.\n\nFLOW  \n1. Receive the user’s question.  \n2. Optionally load the last 5 messages from Redis Chat Memory for additional context.  \n3. Embed the user’s question (handled by your framework).  \n4. **Mandatory**: Call the RetrieveDocs tool with that embedding to fetch an array of `{ id, metadata.text }` for the top 3 chunks—do not proceed to the LLM without doing this.  \n5. If no chunks are returned, immediately respond with:\n   {\n     \"answer\": \"I’m sorry, I don’t have enough information to answer that.\",\n     \"sources\": []\n   }  \n6. Otherwise, build a prompt exactly as follows:\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -20,
+        40
+      ],
+      "id": "aa8b6878-752a-4613-9a29-bb6c66d7ed4f",
+      "name": "Agent"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "0202323b-30a8-4933-ab3a-5c39918b2dc7",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f2912eefacc559178be3766a2e478d5f5ae5178974ae3eced3f0fbcfa10f2505"
+  },
+  "id": "stejBj6hCaDHQh7L",
+  "tags": []
+}
