@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import type { Components } from 'react-markdown';
 import { cn } from '@/lib/utils';
 
 interface MarkdownRendererProps {
@@ -84,7 +85,13 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
             </li>
           ),
           // Code blocks
-          code: ({ inline, className, children, ...props }: any) => {
+          code: (props) => {
+            const { inline, className, children, ...rest } = props as {
+              inline?: boolean;
+              className?: string;
+              children?: React.ReactNode;
+              [key: string]: unknown;
+            };
             const match = /language-(\w+)/.exec(className || '');
             const language = match ? match[1] : '';
             
@@ -97,7 +104,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
                       ? "bg-white/20 text-white" 
                       : "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200"
                   )}
-                  {...props}
+                  {...rest}
                 >
                   {children}
                 </code>
@@ -123,7 +130,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
                     ? "bg-white/10 text-white"
                     : "bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200"
                 )}>
-                  <code className="font-mono" {...props}>
+                  <code className="font-mono" {...rest}>
                     {children}
                   </code>
                 </pre>
